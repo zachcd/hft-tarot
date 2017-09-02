@@ -39,25 +39,17 @@
      body {
          margin: 0;
      }
-     #playfield {
-         display: block;
-         width: 100vw;
-         height: 100vh;
-     }
   </style>
 </head>
 <body>
-  <canvas id="playfield"></canvas>
+
 </body>
 <script>
 const happyfuntimes = require('happyfuntimes');
 
 const globals = {
-  itemSize: 15,
   playerId: 0,
-  frameCount: 0,
   players: [],
-  ctx: document.querySelector("#playfield").getContext("2d"),
 };
 
 function randInt(min, max) {
@@ -68,44 +60,16 @@ function randInt(min, max) {
   return Math.random() * (max - min) + min | 0;
 }
 
-function pickRandomPosition() {
-  return {
-    x: 30 + randInt(globals.ctx.canvas.width  - 60),
-    y: 30 + randInt(globals.ctx.canvas.height - 60),
-  };
-}
 
-class Goal {
-  constructor() {
-    this.pickGoal();
-    this.radiusesSquared = globals.itemSize * 2 * globals.itemSize;
-  }
-
-  pickGoal() {
-    this.position = pickRandomPosition();
-  }
-
-  isHit(otherPosition) {
-    const dx = otherPosition.x - this.position.x;
-    const dy = otherPosition.y - this.position.y;
-    return dx * dx + dy * dy < this.radiusesSquared;
-  }
-}
 
 class Player {
   constructor(netPlayer, name) {
     this.netPlayer = netPlayer;
     this.name = name;
-    this.position = pickRandomPosition();
 
-    const hue = randInt(360);
-    const sat = randInt(2) * 50 + 50;
-    const val = 50;
-    this.color = "hsl(" + hue  + "," + sat + "%," + val + "%)";
 
     netPlayer.addEventListener('disconnect', Player.prototype.disconnect.bind(this));
-    netPlayer.addEventListener('move', Player.prototype.movePlayer.bind(this));
-    netPlayer.sendCmd('color', this.color);
+
   }
 
   disconnect() {
@@ -115,62 +79,16 @@ class Player {
     }
   }
 
-  movePlayer(cmd) {
-    this.position.x = Math.floor(cmd.x * globals.ctx.canvas.clientWidth);
-    this.position.y = Math.floor(cmd.y * globals.ctx.canvas.clientHeight);
-
-    if (globals.goal.isHit(this.position)) {
-      // This will generate a 'scored' event on the client (player's smartphone)
-      // that corresponds to this player.
-      this.netPlayer.sendCmd('scored', {
-        points: randInt(5, 11), // 5 to 10 points
-      });
-      globals.goal.pickGoal();
-    }
-  }
 }
 
 const server = new happyfuntimes.GameServer();
-globals.goal = new Goal();
 
 // A new player has arrived.
 server.on('playerconnect', function(netPlayer) {
   globals.players.push(new Player(netPlayer, "Player" + (++globals.playerId)));
 });
 
-function drawItem(ctx, position, color) {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(position.x, position.y, globals.itemSize, 0, Math.PI * 2);
-  ctx.fill();
-};
 
-function resize(canvas) {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
-}
 
-function render() {
-  ++globals.frameCount;
-
-  const ctx = globals.ctx;
-
-  resize(ctx.canvas);
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-  globals.players.forEach(function(player) {
-    drawItem(ctx, player.position, player.color);
-  });
-
-  drawItem(ctx, globals.goal.position, (globals.frameCount & 4) ? "red" : "pink");
-
-  requestAnimationFrame(render);
-};
-requestAnimationFrame(render);
 </script>
 </html>
-
