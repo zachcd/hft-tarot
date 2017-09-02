@@ -1,40 +1,13 @@
 <!--
 /*
- * Copyright 2016, Gregg Tavares.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Gregg Tavares. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Description of code: Dealing cards, points, and game rules
  */
 -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Clean</title>
+  <title> French Tarot</title>
   <style>
      body {
          margin: 0;
@@ -42,17 +15,20 @@
   </style>
 </head>
 <body>
-
+Waiting for player
 </body>
-<script>
-const happyfuntimes = require('happyfuntimes');
+<script> //defines that there is javascript inside
+const happyfuntimes = require('happyfuntimes'); // imports the library of happyfuntimes
+import tarotDeck from './tarotDeck.js'
 
-const globals = {
+const globals = { // globals is the state of the game, where you store things other parts of the game need access to
   playerId: 0,
   players: [],
+  currentlyPlaying: false,
+  disconnected: []
 };
 
-function randInt(min, max) {
+function randInt(min, max) { // random number generator
   if (max === undefined) {
     max = min;
     min = 0;
@@ -63,7 +39,7 @@ function randInt(min, max) {
 
 
 class Player {
-  constructor(netPlayer, name) {
+  constructor(netPlayer, name) { //making new instances of the class, contructor calls the function to set it up
     this.netPlayer = netPlayer;
     this.name = name;
 
@@ -73,22 +49,63 @@ class Player {
   }
 
   disconnect() {
-    const ndx = globals.players.indexOf(this);
+    const ndx = globals.players.indexOf(this); //index of takes the array and searches through it to find the index for the player
     if (ndx >= 0) {
-      globals.players.splice(ndx, 1);
+      globals.players.splice(ndx, 1); //splice is removing
     }
   }
 
+}
+
+class TarotGame {
+  constructor(players) {
+    this.deck = shuffle(tarotDeck)
+    this.doggo = []//deck is 78
+    this.players = players
+    
+  }
+}
+
+function shuffle(array) {
+  var m = array.length, t, i;
+
+  // While there remain elements to shuffle…
+  while (m) {
+
+    // Pick a remaining element…
+    i = Math.floor(Math.random() * m--);
+
+    // And swap it with the current element.
+    t = array[m];
+    array[m] = array[i];
+    array[i] = t;
+  }
+
+  return array;
 }
 
 const server = new happyfuntimes.GameServer();
 
 // A new player has arrived.
 server.on('playerconnect', function(netPlayer) {
-  globals.players.push(new Player(netPlayer, "Player" + (++globals.playerId)));
+  let newPlayer = new Player(netPlayer, "Player" + (++globals.playerId))
+  globals.players.push(newPlayer);
+  if (globals.players.length == 4) {
+    if (globals.currentlyPlaying) {//if a boolean, autuomatically checks if true or not, if statements can only undertand T/F
+      reconnect(newPlayer, globals.disconnected)
+    } else {
+      startGame ()
+    }
+  }
 });
 
+function reconnect(player,disconnects) {
 
+}
+
+function startGame() {
+  globals.currentlyPlaying = true
+}
 
 </script>
 </html>
