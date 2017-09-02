@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
-  <title>Clean Controls</title>
+  <title>French Tarot</title>
   <style>
   body {
       margin: 0;
@@ -16,7 +16,8 @@
 </head>
 <body>
 <div id="toucharea">
-    <div id="hand"></div>
+  <div id="bidOverlay"> </div>
+  <div id="hand"></div>
 </div>
 </body>
 <!--
@@ -31,8 +32,11 @@ client.on('connect', handleConnect);
 client.on('disconnect', handleDisconnect);
 client.on('draw', handleDraw);
 client.on('filter', handleFilter);
+client.on('bidAsk', handleBid);
+
 
 var hand = []
+var touchArea = document.getElementById("toucharea")
 
 function handleConnect() {
   // nothing to do here though maybe we don't want to
@@ -44,9 +48,12 @@ function handleDisconnect() {
 }
 
 function handleDraw(cards) {
+  if (!Array.isArray(cards)) {
+    let cards = [cards]
+  }
   cards.forEach((card) => {
     hand.push(card)
-    let handDiv = document.createElement("div")
+    let handDiv = document.getElementById("hand")
 
     let cardNameContainer = document.createElement("h2")
     cardNameContainer.id = card.name
@@ -69,7 +76,7 @@ function handleDraw(cards) {
 }
 
 function handleFilter(filter) { //filter codes: 0 - all available, 1 - suit to trumps, 2- not set yet
-  let elements = handDiv.children
+  let elements = document.getElementById("hand").children
 
   hand.forEach((card, index) => {
     if (isEnabled(card, filer)) {
@@ -78,6 +85,12 @@ function handleFilter(filter) { //filter codes: 0 - all available, 1 - suit to t
       elements[index].children[1].disabled = false
     }
   })
+}
+
+function handleBid(currentBid) {
+  let overlay = document.getElementById("bidOverlay")
+  document.createElement()
+  overlay
 }
 
 function isEnabled(card, filter) {
@@ -94,8 +107,11 @@ function playCard(card) {
   let elements = handDiv.children
   client.sendCmd('play', card)
   let index = hand.indexOf(card)
-  elements.slice(index, index + 1)
-  hand = hand.slice
+  elements[index].remove()
+  hand.splice(index, 1)
+  hand.forEach((card, index) => {
+    elements[index].children[1].disabled = true
+  })
 }
 
 
