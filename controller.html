@@ -12,18 +12,11 @@
       font-weight: bold;
       font-family: sans-serif;
   }
-  #toucharea {
-      display: flex;
-      width: 100vw;
-      height: 100vh;
-      justify-content: center;
-      align-items: center;
-  }
   </style>
 </head>
 <body>
 <div id="toucharea">
-    <div id="msg">touch to move</div>
+    <div id="hand"></div>
 </div>
 </body>
 <!--
@@ -36,10 +29,10 @@ You could also use require.js or webpack etc...
 const client = new HFT.GameClient();
 client.on('connect', handleConnect);
 client.on('disconnect', handleDisconnect);
-client.on('color', handleColor);
-client.on('scored', handleScored);
+client.on('draw', handleDraw);
+client.on('filter', handleFilter);
 
-let points = 0;
+var hand = []
 
 function handleConnect() {
   // nothing to do here though maybe we don't want to
@@ -50,55 +43,62 @@ function handleDisconnect() {
   touchArea.textContent = "...disconnected...";
 }
 
-function handleColor(color) {
-  touchArea.style.backgroundColor = color;
+function handleDraw(cards) {
+  cards.forEach((card) => {
+    hand.push(card)
+    let handDiv = document.createElement("div")
+
+    let cardNameContainer = document.createElement("h2")
+    cardNameContainer.id = card.name
+    let cardName = document.createTextNode(card.name);
+
+    let cardPlayButton = document.createElement("button")
+    let text = document.createTextNode("Play Card");
+    cardPlayButton.addEventListener('click', () => {
+      playCard(card)
+    })
+
+    cardPlayButton.appendChild(text)
+
+    cardNameContainer.appendChild(cardName)
+    cardNameContainer.className = "card"
+    handDiv.appendChild(cardNameContainer)
+    document.getElementById('hand').appendChild(handDiv)
+  })
+
 }
 
-function handleScored(data) {
-  points += data.points;
-  touchArea.textContent = "points: " + points;
+function handleFilter(filter) { //filter codes: 0 - all available, 1 - suit to trumps, 2- not set yet
+  let elements = handDiv.children
+
+  hand.forEach((card, index) => {
+    if (isEnabled(card, filer)) {
+      elements[index].children[1].disabled = true
+    } else {
+      elements[index].children[1].disabled = false
+    }
+  })
 }
 
-const touchArea = document.querySelector('#toucharea');
-touchArea.addEventListener('mousemove', handleMouseMove);
-touchArea.addEventListener('touchmove', handleTouchMove);
-touchArea.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-});
-
-function handleTouchMove(event) {
-  // only handle the first touch
-  sendMoveCmd(getRelativePosition(event.touches[0], touchArea), touchArea);
-}
-
-function handleMouseMove(event) {
-  sendMoveCmd(getRelativePosition(event, touchArea), touchArea);
-}
-
-// This will generate a 'move' event in the corresponding
-// NetPlayer object in the game.
-function sendMoveCmd(position, target) {
-  // normalize the position from 0 to 1 because
-  // different players smartphones will have different size
-  // screens
-  client.sendCmd('move', {
-    x: position.x / target.clientWidth,
-    y: position.y / target.clientHeight,
-  });
-};
-
-
-function getRelativePosition(event, target) {
-  target = target || event.target;
-  var rect = target.getBoundingClientRect();
-
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
+function isEnabled(card, filter) {
+  if (filter.code === 0) {
+    return true
+  } else if (filter.code ===1) {
+    return card.suit === filter.suit
+  } else {
+    return false //other filter
   }
 }
 
+function playCard(card) {
+  let elements = handDiv.children
+  client.sendCmd('play', card)
+  let index = hand.indexOf(card)
+  elements.slice(index, index + 1)
+  hand = hand.slice
+}
+
+
+
 </script>
 </html>
-
-
