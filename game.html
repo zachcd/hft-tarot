@@ -15,7 +15,7 @@ Description of code: Dealing cards, points, and game rules
   </style>
 </head>
 <body>
-Waiting for player
+Waiting for players
 </body>
 <script> //defines that there is javascript inside
 const happyfuntimes = require('happyfuntimes'); // imports the library of happyfuntimes
@@ -122,7 +122,7 @@ class TarotGame {
   }
 
   nextBid(playerIndex) {
-    if (this.topBid.value == 4) {
+    if (this.topBid.value === 4) {
       this.enterPlay()
     } else if (this.passed[playerIndex] !== true) {
       this.players[playerIndex].askBid(this.topBid.value)
@@ -134,7 +134,11 @@ class TarotGame {
   }
 
   enterPlay() {
-    this.players[this.topBid.player].askPlay({code: 0})
+    this.startRound(this.topBid.player)
+  }
+
+  startRound(player) {
+    this.players[player].askPlay({code: 0})
   }
 
   nextCard(playerIndex) {
@@ -162,6 +166,32 @@ class TarotGame {
       }
     }
     this.scorePiles[top.player] = [...this.scorePiles[top.player], ...this.currentTrick]
+    this.currentTrick = []
+    if (this.scorePiles[0].length + this.scorePiles[1].length + this.scorePiles[2].length + this.scorePiles[3].length >= 78) {
+      endGame()
+    }
+  }
+
+  endGame() {
+    let oudlerCount = 0
+    let score = 0
+    scorePiles[this.topBid.player].forEach((card)=> {
+      if (card.oudler) {
+        oudlerCount++
+      }
+      score += card.points
+    })
+    if (oudlerCount >=0 && score >= 56) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 1 && score >= 51) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 2 && score >= 41) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 3 && score >= 36) {
+      console.log("Taker won")
+    } else {
+      console.log("Taker Lost")
+    }
   }
 
 }
