@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
-  <title>Clean Controls</title>
+  <title>French Tarot</title>
   <style>
   body {
       margin: 0;
@@ -12,18 +12,12 @@
       font-weight: bold;
       font-family: sans-serif;
   }
-  #toucharea {
-      display: flex;
-      width: 100vw;
-      height: 100vh;
-      justify-content: center;
-      align-items: center;
-  }
   </style>
 </head>
 <body>
 <div id="toucharea">
-    <div id="msg">touch to move</div>
+  <div id="bidOverlay"> </div>
+  <div id="hand"></div>
 </div>
 </body>
 <!--
@@ -36,10 +30,13 @@ You could also use require.js or webpack etc...
 const client = new HFT.GameClient();
 client.on('connect', handleConnect);
 client.on('disconnect', handleDisconnect);
-client.on('color', handleColor);
-client.on('scored', handleScored);
+client.on('draw', handleDraw);
+client.on('filter', handleFilter);
+client.on('bidAsk', handleBid);
 
-let points = 0;
+
+var hand = []
+var touchArea = document.getElementById("toucharea")
 
 function handleConnect() {
   // nothing to do here though maybe we don't want to
@@ -50,55 +47,113 @@ function handleDisconnect() {
   touchArea.textContent = "...disconnected...";
 }
 
-function handleColor(color) {
-  touchArea.style.backgroundColor = color;
+function handleDraw(cards) {
+  if (!Array.isArray(cards)) {
+    let cards = [cards]
+  }
+  let handDiv = document.getElementById("hand")
+  cards.forEach((card) => {
+    hand.push(card)
+    let cardContainer = document.createElement("div") //creates the card
+    cardContainer.id = card.name //creates place for the title
+    cardContainer.className = "card"
+    let cardNameContainer = document.createElement("h2") //type of header
+    let cardName = document.createTextNode(card.name);
+    cardNameContainer.appendChild(cardName) //adds card name
+    let cardPlayButton = document.createElement("button") //make a button
+    let text = document.createTextNode("Play Card"); // give buttons text
+    cardPlayButton.addEventListener('click', () => {
+      playCard(card)
+    })
+
+    cardPlayButton.appendChild(text)
+    handDiv.appendChild(cardContainer)
+    cardContainer.appendChild(cardNameContainer)
+    cardContainer.appendChild(cardPlayButton)
+  })
+
 }
 
-function handleScored(data) {
-  points += data.points;
-  touchArea.textContent = "points: " + points;
+function handleFilter(filter) { //filter codes: 0 - all available, 1 - suit to trumps, 2- not set yet
+  let elements = document.getElementById("hand").children
+
+  hand.forEach((card, index) => {
+    if (isEnabled(card, filer)) {
+      elements[index].children[1].disabled = true
+    } else {
+      elements[index].children[1].disabled = false
+    }
+  })
 }
 
-const touchArea = document.querySelector('#toucharea');
-touchArea.addEventListener('mousemove', handleMouseMove);
-touchArea.addEventListener('touchmove', handleTouchMove);
-touchArea.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-});
+function handleBid(currentBid) {
+  let overlay = document.getElementById("bidOverlay")
+  document.createElement()
+  overlay
 
-function handleTouchMove(event) {
-  // only handle the first touch
-  sendMoveCmd(getRelativePosition(event.touches[0], touchArea), touchArea);
+  let smallDoggoButton = document.createElement("button")
+  let textSmallDoggo = document.createTextNode("One - Put the 6 cards in your hand and remove 6 of your choice except kings and power cards.")
+    let pressSmallDoggo = document.createTextNode ("Bid One")
+    let smallDoggoContainer = document.createElement("div")
+    smallDoggoContainer.appendChild(textSmallDoggo)
+    smallDoggoContainer.appendChild(smallDoggoButton)
+    smallDoggoButton.appendChild(pressSmallDoggo)
+
+  let mediumDoggoButton = document.createElement("button")
+  let textMediumDoggo = document.createTextNode("Two - Same as 1 with a higher multiplier")
+    let pressMediumDoggo = document.createTextNode ("Bid Two")
+    let mediumDoggoContainer = document.createElement("div")
+    mediumDoggoContainer.appendChild(textMediumDoggo)
+    mediumDoggoContainer.appendChild(mediumDoggoButton)
+    mediumDoggoButton.appendChild(pressMediumDoggo)
+
+  let bigDoggoButton = document.createElement("button")
+  let textBigDoggo = document.createTextNode("Three - Put the 6 cards in your score pile without looking at them.")
+    let pressBigDoggo = document.createTextNode ("Bid Three")
+    let bigDoggoContainer = document.createElement("div")
+    bigDoggoContainer.appendChild(textBigDoggo)
+    bigDoggoContainer.appendChild(bigDoggoButton)
+    bigDoggoButton.appendChild(pressBigDoggo)
+
+  let hugeDoggoButton = document.createElement("button")
+  let textHugeDoggo = document.createTextNode("Four - Give the 6 cards to the other three players.")
+    let pressHugeDoggo = document.createTextNode ("Bid Four")
+    let hugeDoggoContainer = document.createElement("div")
+    hugeDoggoContainer.appendChild(textHugeDoggo)
+    hugeDoggoContainer.appendChild(hugeDoggoButton)
+    hugeDoggoButton.appendChild(pressHugeDoggo)
+
+  let passOnDoggoButton = document.createElement("button")
+  let textPassOnDoggo = document.createTextNode("Pass - You will not bid.")
+    let pressPassOnDoggo = document.createTextNode ("Pass")
+    let passOnDoggoContainer = document.createElement("div")
+    passOnDoggoContainer.appendChild(textPassOnDoggo)
+    passOnDoggoContainer.appendChild(passOnDoggoButton)
+    passOnDoggoButton.appendChild(pressPassOnDoggo)
 }
 
-function handleMouseMove(event) {
-  sendMoveCmd(getRelativePosition(event, touchArea), touchArea);
-}
-
-// This will generate a 'move' event in the corresponding
-// NetPlayer object in the game.
-function sendMoveCmd(position, target) {
-  // normalize the position from 0 to 1 because
-  // different players smartphones will have different size
-  // screens
-  client.sendCmd('move', {
-    x: position.x / target.clientWidth,
-    y: position.y / target.clientHeight,
-  });
-};
-
-
-function getRelativePosition(event, target) {
-  target = target || event.target;
-  var rect = target.getBoundingClientRect();
-
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
+function isEnabled(card, filter) {
+  if (filter.code === 0) {
+    return true
+  } else if (filter.code ===1) {
+    return card.suit === filter.suit
+  } else {
+    return false //other filter
   }
 }
 
+function playCard(card) {
+  let elements = handDiv.children
+  client.sendCmd('play', card)
+  let index = hand.indexOf(card)
+  elements[index].remove()
+  hand.splice(index, 1)
+  hand.forEach((card, index) => {
+    elements[index].children[1].disabled = true
+  })
+}
+
+
+
 </script>
 </html>
-
-
