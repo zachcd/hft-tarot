@@ -1,66 +1,34 @@
 <!--
 /*
- * Copyright 2016, Gregg Tavares.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Gregg Tavares. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Description of code: Dealing cards, points, and game rules
  */
 -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Clean</title>
+  <title> French Tarot</title>
   <style>
      body {
          margin: 0;
      }
-     #playfield {
-         display: block;
-         width: 100vw;
-         height: 100vh;
-     }
   </style>
 </head>
 <body>
-  <canvas id="playfield"></canvas>
+Waiting for players
 </body>
-<script>
-const happyfuntimes = require('happyfuntimes');
+<script> //defines that there is javascript inside
+const happyfuntimes = require('happyfuntimes'); // imports the library of happyfuntimes
+import tarotDeck from './tarotDeck.js'
 
-const globals = {
-  itemSize: 15,
+const globals = { // globals is the state of the game, where you store things other parts of the game need access to
   playerId: 0,
-  frameCount: 0,
   players: [],
-  ctx: document.querySelector("#playfield").getContext("2d"),
+  currentlyPlaying: false,
+  disconnected: []
 };
 
-function randInt(min, max) {
+function randInt(min, max) { // random number generator
   if (max === undefined) {
     max = min;
     min = 0;
@@ -68,109 +36,208 @@ function randInt(min, max) {
   return Math.random() * (max - min) + min | 0;
 }
 
-function pickRandomPosition() {
-  return {
-    x: 30 + randInt(globals.ctx.canvas.width  - 60),
-    y: 30 + randInt(globals.ctx.canvas.height - 60),
-  };
-}
 
-class Goal {
-  constructor() {
-    this.pickGoal();
-    this.radiusesSquared = globals.itemSize * 2 * globals.itemSize;
-  }
-
-  pickGoal() {
-    this.position = pickRandomPosition();
-  }
-
-  isHit(otherPosition) {
-    const dx = otherPosition.x - this.position.x;
-    const dy = otherPosition.y - this.position.y;
-    return dx * dx + dy * dy < this.radiusesSquared;
-  }
-}
 
 class Player {
-  constructor(netPlayer, name) {
+  constructor(netPlayer, id) { //making new instances of the class, contructor calls the function to set it up
     this.netPlayer = netPlayer;
-    this.name = name;
-    this.position = pickRandomPosition();
-
-    const hue = randInt(360);
-    const sat = randInt(2) * 50 + 50;
-    const val = 50;
-    this.color = "hsl(" + hue  + "," + sat + "%," + val + "%)";
+    this.name = "Player " +name;
+    this.id = id
 
     netPlayer.addEventListener('disconnect', Player.prototype.disconnect.bind(this));
-    netPlayer.addEventListener('move', Player.prototype.movePlayer.bind(this));
-    netPlayer.sendCmd('color', this.color);
+    netPlayer.addEventListener('play', Player.prototype.playCard.bind(this));
+    netPlayer.addEventListener('bid', Player.prototype.bid.bind(this));
+
+  }
+
+  playCard(card) {
+    globals.currentlyPlaying.currentTrick[globals.currentlyPlaying.players.indexOf(this)] = { ...card, player: globals.currentlyPlaying.players.indexOf(this)}
+  }
+
+  bid(bid) {
+
+    if (bid) {
+      globals.currentlyPlaying.topBid = {value: bid, player : globals.currentlyPlaying.players.indexOf(this)}
+    } else {
+      globals.currentlyPlaying.passed[globals.currentlyPlaying.players.indexOf(this)] == true
+      globals.currentlyPlaying.passedCount = globals.currentlyPlaying.passedCount++
+    }
+    globals.currentlyPlaying.nextBid()
   }
 
   disconnect() {
-    const ndx = globals.players.indexOf(this);
+    const ndx = globals.players.indexOf(this); //index of takes the array and searches through it to find the index for the player
     if (ndx >= 0) {
-      globals.players.splice(ndx, 1);
+      globals.players.splice(ndx, 1); //splice is removing
+    }
+  }
+  sendDraw(cards) {
+     this.netPlayer.sendCmd('draw', {
+       data: cards
+     })
+  }
+
+  askBid(currentBid) {
+    this.netPLayer.sendCmd('bidAsk', {
+      lead: currentBid
+    })
+  }
+
+  askPlay(filter) {
+    this.netPlayer.sendCmd('filter', filter)
+  }
+}
+
+class TarotGame {
+  constructor(players, deck = shuffle(tarotDeck)) {
+    this.deck = deck
+    this.doggo = []//deck is 78
+    this.players = shuffle(players)
+    this.handBackup = []
+    this.topBid = {}
+    this.passed = []
+    this.passedCount = 0
+    this.currentTrick = []
+    this.scorePiles = []
+
+    while(this.deck.length > 0) {
+      this.deal3(0)
+      this.deal3(1)
+      this.doggo.push(this.deck.pop())
+      this.deal3(2)
+      this.deal3(3)
+    }
+
+    this.enterBidding()
+  }
+
+  deal3(playerIndex){
+    let packet = [this.deck.pop(), this.deck.pop(), this.deck.pop()]
+    this.players[playerIndex].sendDraw(packet)
+    this.handBackup[playerIndex] = [...this.handBackup[playerIndex], ...packet]
+  }
+
+  enterBidding() {
+    this.players[0].askBid(false)
+  }
+
+  nextBid(playerIndex) {
+    if (this.topBid.value === 4) {
+      this.enterPlay()
+    } else if (this.passed[playerIndex] !== true) {
+      this.players[playerIndex].askBid(this.topBid.value)
+    } else if (this.passedCount < 3 ) {
+      this.nextBid(playerIndex++)
+    } else {
+      this.enterPlay()
     }
   }
 
-  movePlayer(cmd) {
-    this.position.x = Math.floor(cmd.x * globals.ctx.canvas.clientWidth);
-    this.position.y = Math.floor(cmd.y * globals.ctx.canvas.clientHeight);
+  enterPlay() {
+    this.startRound(this.topBid.player)
+  }
 
-    if (globals.goal.isHit(this.position)) {
-      // This will generate a 'scored' event on the client (player's smartphone)
-      // that corresponds to this player.
-      this.netPlayer.sendCmd('scored', {
-        points: randInt(5, 11), // 5 to 10 points
-      });
-      globals.goal.pickGoal();
+  startRound(player) {
+    this.players[player].askPlay({code: 0})
+  }
+
+  nextCard(playerIndex) {
+    if (this.currentTrick.length <= 3) {
+      this.players[playerIndex].askPlay({code:1, suit: this.currentTrick[0].suit})
+    } else {
+      scoreTrick()
     }
   }
+
+  scoreTrick() {
+    let top = this.currentTrick[0]
+    for (var i = 0; i < 4; i++) {
+      if (this.currentTrick[i].name = "The Fool") {
+        this.scorePiles[this.currentTrick[i].player] = [...this.scorePiles[this.currentTrick[i].player], this.currentTrick[i]]
+        this.currentTrick.splice(i, 1)
+      } else {
+        if (top.suit === "Major" && this.currentTrick[i].suit === "Major" && this.currentTrick[i].strength > top.strength) {
+          top = this.currentTrick[i]
+        } else if (top.suit !== "Major" && this.currentTrick[i].suit === "Major") {
+          top = this.currentTrick[i]
+        } else if (top.suit === this.currentTrick[i].suit && this.currentTrick[i].strength > top.strength) {
+          top = this.currentTrick[i]
+        }
+      }
+    }
+    this.scorePiles[top.player] = [...this.scorePiles[top.player], ...this.currentTrick]
+    this.currentTrick = []
+    if (this.scorePiles[0].length + this.scorePiles[1].length + this.scorePiles[2].length + this.scorePiles[3].length >= 78) {
+      endGame()
+    }
+  }
+
+  endGame() {
+    let oudlerCount = 0
+    let score = 0
+    scorePiles[this.topBid.player].forEach((card)=> {
+      if (card.oudler) {
+        oudlerCount++
+      }
+      score += card.points
+    })
+    if (oudlerCount >=0 && score >= 56) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 1 && score >= 51) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 2 && score >= 41) {
+      console.log("Taker won")
+    } else if (oudlerCount >= 3 && score >= 36) {
+      console.log("Taker won")
+    } else {
+      console.log("Taker Lost")
+    }
+  }
+
+}
+
+
+
+function shuffle(array) {
+  var m = array.length, t, i;
+
+  // While there remain elements to shuffle…
+  while (m) {
+
+    // Pick a remaining element…
+    i = Math.floor(Math.random() * m--);
+
+    // And swap it with the current element.
+    t = array[m];
+    array[m] = array[i];
+    array[i] = t;
+  }
+
+  return array;
 }
 
 const server = new happyfuntimes.GameServer();
-globals.goal = new Goal();
 
 // A new player has arrived.
 server.on('playerconnect', function(netPlayer) {
-  globals.players.push(new Player(netPlayer, "Player" + (++globals.playerId)));
+  let newPlayer = new Player(netPlayer, ++globals.playerId)
+  globals.players.push(newPlayer);
+  if (globals.players.length == 4) {
+    if (globals.currentlyPlaying) {//if a boolean, autuomatically checks if true or not, if statements can only undertand T/F
+      reconnect(newPlayer, globals.disconnected)
+    } else {
+      startGame()
+    }
+  }
 });
 
-function drawItem(ctx, position, color) {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(position.x, position.y, globals.itemSize, 0, Math.PI * 2);
-  ctx.fill();
-};
+function reconnect(player,disconnects) {
 
-function resize(canvas) {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
 }
 
-function render() {
-  ++globals.frameCount;
+function startGame() {
+  globals.currentlyPlaying = new TarotGame(globals.players)
+}
 
-  const ctx = globals.ctx;
-
-  resize(ctx.canvas);
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-  globals.players.forEach(function(player) {
-    drawItem(ctx, player.position, player.color);
-  });
-
-  drawItem(ctx, globals.goal.position, (globals.frameCount & 4) ? "red" : "pink");
-
-  requestAnimationFrame(render);
-};
-requestAnimationFrame(render);
 </script>
 </html>
-
