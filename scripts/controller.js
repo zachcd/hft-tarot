@@ -6,10 +6,12 @@ client.on('disconnect', handleDisconnect);
 client.on('draw', handleDraw);
 client.on('filter', handleFilter);
 client.on('bidAsk', handleBid);
+client.on('six', handlesix);
 
 
 var hand = []
 var touchArea = document.getElementById("toucharea")
+var dog = false
 
 function handleConnect() {
   // nothing to do here though maybe we don't want to
@@ -37,7 +39,11 @@ function handleDraw(cards) {
     let cardPlayButton = document.createElement("button") //make a button
     let text = document.createTextNode("Play Card"); // give buttons text
     cardPlayButton.addEventListener('click', () => {
-      playCard(card)
+      if(dog) {
+        setAside(card)
+      } else {
+        playCard(card)
+      }
     })
     cardPlayButton.disabled = true
 
@@ -59,6 +65,31 @@ function handleFilter(filter) { //filter codes: 0 - all available, 1 - suit to t
       elements[index].children[1].disabled = false
     }
   })
+}
+
+function six() {
+  let elements = document.getElementById("hand").children
+
+  hand.forEach((card, index) => {
+    if (card.suit ==="Major" || card.strength === 14) {
+      elements[index].children[1].disabled = true
+    } else {
+      elements[index].children[1].disabled = false
+    }
+  })
+  dog = []
+}
+
+function setAside(card) {
+  let elements = handDiv.children
+  let index = hand.indexOf(card)
+  elements[index].remove()
+  hand.splice(index, 1)
+  dog.push(card)
+  if(dog.length >= 6) {
+    client.sendCmd('side', {cards: dog})
+    dog = false
+  }
 }
 
 function handleBid(currentBidData) {

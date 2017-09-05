@@ -27,6 +27,7 @@ class Player {
    netPlayer.addEventListener('disconnect', Player.prototype.disconnect.bind(this));
    netPlayer.addEventListener('play', Player.prototype.playCard.bind(this));
    netPlayer.addEventListener('bid', Player.prototype.bid.bind(this));
+   netPlayer.addEventListener('side', Player.prototype.side.bind(this));
 
  }
 
@@ -72,6 +73,9 @@ class Player {
 
  askPlay(filter) {
    this.netPlayer.sendCmd('filter', filter)
+ }
+ askSix() {
+   this.netPlayer.sendCmd('six', {})
  }
 }
 
@@ -129,6 +133,7 @@ class TarotGame {
    console.log("top bid is: " + this.topBid)
    if (this.topBid.value === 1 || this.topBid.value ===2) {
      this.players[this.topBid.player].sendDraw(this.doggo)
+     this.players[this.topBid.player].askSix()
    } else if (topBid.value === 3) {
      this.scorePiles[this.topBid.player].sendDraw(this.doggo)
    } else if (topBid.value === 4){
