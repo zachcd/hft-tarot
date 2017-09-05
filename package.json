@@ -13,6 +13,7 @@
   },
   "main": "main.js",
   "scripts": {
+    "build": "babel scripts --out-dir build --presets es2015",
     "start": "cross-env NODE_ENV=development electron main.js",
     "startp": "cross-env NODE_ENV=production electron main.js",
     "pack": "build --dir",
@@ -34,6 +35,8 @@
   },
   "homepage": "https://github.com/greggman/hft-clean#readme",
   "dependencies": {
+    "babel-preset-es2015": "^6.24.1",
+    "electron": "^1.7.5",
     "happyfuntimes": "^0.2.1",
     "hft-game-utils": "^1.0.0",
     "hft-sample-ui": "^1.0.0",
@@ -41,8 +44,12 @@
     "requirejs": "^2.3.2"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.0",
     "cross-env": "^3.1.3",
-    "electron": "^1.4.5",
     "electron-builder": "^8.6.0"
   }
 }

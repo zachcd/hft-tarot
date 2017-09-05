@@ -1,5 +1,6 @@
+
 function generateSuit(suit){
-  let generatedSuit= [
+  return [
   {
   name: "Ace of " + suit,
   suit: suit,
@@ -97,12 +98,12 @@ function generateSuit(suit){
   strength: 14,
   points: 4.5,
   oudler: false,
-  },
-
+  }
 ]
 }
 
-const majorCards = [{
+const majorCards =
+[{
   name: "The World",
   suit: "Major",
   strength: 21,
@@ -113,145 +114,145 @@ const majorCards = [{
   name: "Judgement",
   suit: "Major",
   strength: 20,
-  points: .5
+  points: .5,
   oudler: false
 },
 {
 name: "The Sun",
-suit: "Major"
+suit: "Major",
 strength: 19,
 points: .5,
 oudler: false,
 },
 {
 name: "The Moon",
-suit: "Major"
+suit: "Major",
 strength: 18,
 points: .5,
 oudler: false,
 },
 {
 name: "The Star",
-suit: "Major"
+suit: "Major",
 strength: 17,
 points: .5,
 oudler: false,
 },
 {
-name: "The Happies",
-suit: "Major"
+name: "The Tower",
+suit: "Major",
 strength: 16,
 points: .5,
 oudler: false,
 },
 {
 name: "The Devil",
-suit: "Major"
+suit: "Major",
 strength: 15,
 points: .5,
 oudler: false,
 },
 {
 name: "Temperance",
-suit: "Major"
+suit: "Major",
 strength: 14,
 points: .5,
 oudler: false,
 },
 {
 name: "Death",
-suit: "Major"
+suit: "Major",
 strength: 13,
 points: .5,
 oudler: false,
 },
 {
-name: "the Hanged Man",
-suit: "Major"
+name: "The Hanged Man",
+suit: "Major",
 strength: 12,
 points: .5,
 oudler: false,
 },
 {
 name: "Justice",
-suit: "Major"
+suit: "Major",
 strength: 11,
 points: .5,
 oudler: false,
 },
 {
-name: "Wheeeeee! of Fortune",
-suit: "Major"
+name: "Wheel of Fortune",
+suit: "Major",
 strength: 10,
 points: .5,
 oudler: false,
 },
 {
-name: "The Smelly Hermit Who Doesnt Do His Laundry",
-suit: "Major"
+name: "The Hermit",
+suit: "Major",
 strength: 9,
 points: .5,
 oudler: false,
 },
 {
-name: "Strenth",
-suit: "Major"
+name: "Strength",
+suit: "Major",
 strength: 8,
 points: .5,
 oudler: false,
 },
 {
 name: "The Chariot",
-suit: "Major"
+suit: "Major",
 strength: 7,
 points: .5,
 oudler: false,
 },
 {
-name: "BD and Lifan",
-suit: "Major"
+name: "The Lovers",
+suit: "Major",
 strength: 6,
 points: .5,
 oudler: false,
 },
 {
 name: "The Hierophant",
-suit: "Major"
+suit: "Major",
 strength: 5,
 points: .5,
 oudler: false,
 },
 {
 name: "The Emperor",
-suit: "Major"
+suit: "Major",
 strength: 4,
 points: .5,
 oudler: false,
 },
 {
 name: "The Empress",
-suit: "Major"
+suit: "Major",
 strength: 3,
 points: .5,
 oudler: false,
 },
 {
 name: "The High Priestess",
-suit: "Major"
+suit: "Major",
 strength: 2,
 points: .5,
 oudler: false,
 },
 {
 name: "The Magician",
-suit: "Major"
+suit: "Major",
 strength: 1,
 points: 4.5,
 oudler: false,
 },
 {
 name: "The Fool",
-suit: "Major"
+suit: "Major",
 strength: 0,
 points: 4.5,
 oudler: false,
@@ -264,7 +265,7 @@ oudler: false,
 
 
 
-export default const tarotDeck = [
+const tarotDeck = [
   ...generateSuit ("Cups"),
   ...generateSuit ("Wands"),
   ...generateSuit ("Pentacles"),

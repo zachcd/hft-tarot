@@ -1,5 +1,7 @@
 "use strict";
 
+require("babel-polyfill");
+
 const isOSX = process.platform === 'darwin';
 const isDevMode = process.env.NODE_ENV === 'development';
 
@@ -186,4 +188,3 @@ function setupMenus() {
   const menu = electron.Menu.buildFromTemplate(menuTemplate);
   electron.Menu.setApplicationMenu(menu);
 }
-
