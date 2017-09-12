@@ -121,7 +121,7 @@ var majorCards = [{
   points: .5,
   oudler: false
 }, {
-  name: "The Tower",
+  name: "The Happies",
   suit: "Major",
   strength: 16,
   points: .5,
